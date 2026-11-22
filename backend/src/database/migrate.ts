@@ -12,6 +12,7 @@ async function main() {
   try {
     const client = await database.pool.connect();
     try {
+      await client.query('SET statement_timeout = 0');
       await migrate(client);
       logger.info({ event: 'migrations_applied' });
     } finally {
@@ -22,7 +23,10 @@ async function main() {
   }
 }
 
-main().catch(() => {
-  logger.error({ event: 'migration_failed', message: 'Check database connectivity, privileges and migration history' });
+main().catch(err => {
+  logger.error({
+    event: 'migration_failed',
+    message: err instanceof Error ? err.message : 'Check database connectivity, privileges and migration history',
+  });
   process.exitCode = 1;
 });

@@ -1,6 +1,6 @@
 param(
   [Parameter(Mandatory = $true)]
-  [ValidateSet('dev', 'build', 'start', 'typecheck', 'test', 'db:generate', 'db:migrate', 'db:migrate:prod')]
+  [ValidateSet('dev', 'build', 'start', 'typecheck', 'test', 'test:docker', 'db:generate', 'db:migrate', 'db:migrate:prod')]
   [string]$Task
 )
 

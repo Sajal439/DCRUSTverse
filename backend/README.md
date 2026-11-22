@@ -65,10 +65,6 @@ The initial migration enables RLS on application tables. Direct anonymous/authen
 
 A SQL trigger maintains user update timestamps. Treat this custom SQL as part of the migration history alongside generated constraints.
 
-### Previous scaffold schema
-
-The previous SQL is preserved in `legacy-migrations/`. It has never been applied by this chat. If you applied it yourself, the new runner detects its history table and stops before modifying accounts. Existing accounts need an explicit identity mapping and reviewed baseline conversion. The new Drizzle baseline targets a fresh database. No existing database was reset.
-
 ## Tests and verification
 
 `test/auth.test.ts` covers authentication headers, identity responses, invalid tokens, unconfigured authentication, unverified users and provider outages. Other files cover application middleware, configuration and migration constraints.
