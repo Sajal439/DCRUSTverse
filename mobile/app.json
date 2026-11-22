@@ -24,9 +24,8 @@
       "package": "com.dcrustverse.campus",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/icon.png",
-        "backgroundImage": "#FFFFFF"
+        "backgroundColor": "#FFFFFF"
       },
       "predictiveBackGestureEnabled": false
     },
