@@ -75,6 +75,9 @@ export function createApp(
   app.use(cors({ origin: config.CORS_ORIGIN, exposedHeaders: ['X-Request-ID'] }));
   if (userRepo && extraRepos?.filesRepo) app.use('/api/v1/files', createFilesRouter(verify, userRepo, extraRepos.filesRepo));
   app.use(express.json({ limit: '100kb' }));
+  app.get('/', (_req, res) => {
+    res.json({ status: 'ok', name: 'DCRUSTverse API', health: '/api/v1/health' });
+  });
   app.use('/api/v1', createV1Router(check));
   app.use('/api/v1/auth', createAuthRouter(verify, userRepo));
 
