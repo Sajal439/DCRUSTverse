@@ -16,3 +16,5 @@ tmp/
 mobile/credentials.json
 *.jks
 *.keystore
+*.apk
+*.aab
