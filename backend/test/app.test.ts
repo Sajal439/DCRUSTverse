@@ -13,7 +13,9 @@ test('health returns service status, request ID and security headers', async () 
   assert.equal(response.body.status, 'ok');
   assert.equal(response.body.service, 'dcrustverse-api');
   assert.ok(!Number.isNaN(Date.parse(response.body.timestamp)));
-  assert.match(response.headers['x-request-id'], /^[0-9a-f-]{36}$/);
+  const requestId = response.headers['x-request-id'];
+  assert.ok(typeof requestId === 'string');
+  assert.match(requestId, /^[0-9a-f-]{36}$/);
   assert.equal(response.headers['cache-control'], 'no-store');
   assert.equal(response.headers['x-content-type-options'], 'nosniff');
   assert.equal(response.headers['x-powered-by'], undefined);

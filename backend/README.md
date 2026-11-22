@@ -62,11 +62,27 @@ Errors use this shape:
 
 Request logs contain IDs, methods, status codes and elapsed time. Request headers, bodies and URL query strings are excluded. Internal error responses do not expose stack traces. Production HTTPS termination and deployment configuration will be handled separately.
 
+## PostgreSQL setup
+
+Stage 2 adds PostgreSQL pooling and versioned SQL migrations. Create a dedicated PostgreSQL database and set `DATABASE_URL` in `.env`. The migration account needs permission to create tables, indexes and functions in its configured schema. Production should use a separate application account with appropriate data access privileges. Remote connections should use `sslmode=verify-full` with a trusted certificate authority.
+
+Run `npm run db:migrate` from the backend directory. Compiled deployments use `npm run db:migrate:prod` and must include both `dist/` and `migrations/`.
+
+Migration runs use a transaction and advisory lock. Filenames and checksums are recorded in `schema_migrations`. Subsequent runs apply pending files. Changes to applied files are rejected. Add a new numbered SQL file to evolve the schema.
+
+The initial schema contains departments and users with unique normalized email addresses, department foreign keys, account status constraints and automatic update timestamps.
+
+`GET /api/v1/ready` returns 200 when the database is reachable and migration history matches the checked-in files. It returns 503 for missing configuration, connectivity failures or pending migrations. The process health endpoint remains available for liveness checks.
+
+The integration test requires `TEST_DATABASE_URL` pointing to a dedicated test database. It creates and removes a randomly named schema. Tests are available for manual execution. The typecheck command checks source and test files without executing them.
+
+Pooling follows the [node-postgres documentation](https://node-postgres.com/features/pooling).
+
 ## Next stages
 
-1. Choose and configure the database, migrations and local development service.
+1. Configure a PostgreSQL connection and apply migrations for live database verification.
 2. Implement account provisioning, password handling and sessions.
 3. Implement scoped role permissions and permission tests.
 4. Add domain modules individually against the acceptance criteria in `PROJECT_REQUIREMENTS.md`.
 
-No database, authentication, domain modules or external integrations are implemented in this stage.
+Database code is implemented. Live database verification is pending. Authentication and domain modules follow in separate stages.
