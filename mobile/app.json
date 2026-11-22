@@ -15,7 +15,8 @@
         }
       ],
       "expo-sharing",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-font"
     ],
     "ios": {
       "supportsTablet": true
