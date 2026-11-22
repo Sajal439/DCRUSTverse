@@ -1,0 +1,2 @@
+backend/drizzle/*.sql text eol=lf
+backend/drizzle/meta/*.json text eol=lf

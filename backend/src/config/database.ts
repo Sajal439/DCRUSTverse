@@ -1,4 +1,6 @@
 import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from '../database/schema.ts';
 import type { Config } from '../types/config.ts';
 import type { Database } from '../types/database.ts';
 import type { Logger } from '../types/logger.ts';
@@ -16,5 +18,5 @@ export function createDatabase(config: Config, log: Logger): Database | undefine
   pool.on('error', () => {
     log.error({ event: 'database_connection_error' });
   });
-  return { pool, close: () => pool.end() };
+  return { pool, orm: drizzle(pool, { schema }), close: () => pool.end() };
 }

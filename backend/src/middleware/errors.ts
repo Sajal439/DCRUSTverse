@@ -1,5 +1,6 @@
 import type { RequestHandler, ErrorRequestHandler } from 'express';
 import type { Logger } from '../types/logger.ts';
+import { HttpError } from '../lib/http-error.ts';
 
 export const notFound: RequestHandler = (_req, res) => {
   res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found', requestId: res.locals.requestId } });
@@ -17,7 +18,9 @@ export function handleErrors(log: Logger): ErrorRequestHandler {
   return (error: unknown, _req, res, next) => {
     if (res.headersSent) return next(error);
     const type = error && typeof error === 'object' && 'type' in error ? error.type : undefined;
-    const known = typeof type === 'string' ? bodyErrors.get(type) : undefined;
+    const known = error instanceof HttpError
+      ? { status: error.status, code: error.code, message: error.message }
+      : typeof type === 'string' ? bodyErrors.get(type) : undefined;
     const requestId = res.locals.requestId;
     if (!known) log.error({ event: 'request_error', requestId, code: 'INTERNAL_ERROR' });
     const { status, code, message } = known ?? {

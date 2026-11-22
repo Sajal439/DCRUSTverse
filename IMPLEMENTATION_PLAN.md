@@ -15,7 +15,7 @@ All phases are committed scope. Checkboxes represent verified work, not scaffold
 
 - [x] Stage 1: create TypeScript/Express API scaffolding, configuration, health endpoint and error handling.
 - [ ] Stage 2: configure database and migrations. Pooling, migration runner, initial identity schema and readiness API implemented. Live database verification pending. Test files written for manual execution.
-- [ ] Stage 3: implement authentication and session lifecycle.
+- [ ] Stage 3: implement authentication and session lifecycle. Supabase token verification and identity endpoint implemented. Campus onboarding, frontend session flows and live verification pending.
 - [ ] Stage 4: implement scoped permissions.
 - [ ] Initialize web, API, shared contracts and local database setup.
 - [ ] Add migrations, fictional seeds and environment examples.
