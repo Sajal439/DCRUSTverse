@@ -1,3 +1,4 @@
+import { privateFileLinkSchema } from '../../files/schemas/files.schema.ts';
 import { z } from 'zod';
 
 export const createDocumentRequestSchema = z.object({
@@ -7,5 +8,5 @@ export const createDocumentRequestSchema = z.object({
 
 export const reviewDocumentRequestSchema = z.object({
   status: z.enum(['approved', 'issued', 'rejected']),
-  issuedFileUrl: z.string().url().optional(),
-});
+  issuedFileUrl: privateFileLinkSchema.optional(),
+}).refine(data => data.status !== 'issued' || !!data.issuedFileUrl, { message: 'Attach the issued certificate before marking this request issued', path: ['issuedFileUrl'] });

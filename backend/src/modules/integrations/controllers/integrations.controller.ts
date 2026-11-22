@@ -10,9 +10,9 @@ export function triggerSync(repo: IntegrationsRepository): RequestHandler {
       throw new HttpError(400, 'INVALID_INPUT', parsed.error.issues[0]?.message ?? 'Invalid sync parameters');
     }
 
-    const result = await repo.executeSync(parsed.data);
+    const result = await repo.executeSync({ ...parsed.data, actorId: res.locals.campusUser!.id });
     if (result.isDuplicate) {
-      return res.status(200).json({ data: result.run, message: 'Sync run already completed (idempotent result)' });
+      return res.status(200).json({ data: result.run, message: 'Previously recorded result for this import' });
     }
 
     res.status(201).json({ data: result.run });

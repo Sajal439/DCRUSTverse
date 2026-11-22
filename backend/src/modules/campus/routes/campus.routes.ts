@@ -27,6 +27,7 @@ export function createCampusRouter(
   // Public / visitor accessible endpoints
   router.get('/locations', listLocations(campusRepo));
   router.get('/locations/:id', getLocation(campusRepo));
+  router.get('/paths', auth, campusUser, requireRoles(['administrator', 'service_staff']), async (_req, res) => { res.json({ data: await campusRepo.listPaths() }); });
   router.get('/routes', getRoute(campusRepo));
   router.get('/qr/scan/:code', scanQrCode(campusRepo));
 

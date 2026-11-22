@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   DCRUSTverse Remote Demonstration Launcher
 
@@ -13,7 +13,7 @@
 #>
 
 param(
-  [ValidateSet('Mobile', 'Web', 'FullStack')]
+  [ValidateSet('Mobile', 'Web', 'BackendTunnel', 'FullStack')]
   [string]$Mode = 'Mobile'
 )
 
@@ -44,7 +44,8 @@ if ($Mode -eq 'Mobile') {
   Push-Location $mobileDir
   try {
     & npx.cmd expo start --tunnel -g
-  } finally {
+  }
+  finally {
     Pop-Location
   }
 }
@@ -65,12 +66,19 @@ elseif ($Mode -eq 'Web') {
     Write-Host "==========================================================" -ForegroundColor Yellow
     Write-Host ""
     & npx.cmd localtunnel --port 5000
-  } finally {
+  }
+  finally {
     if ($serveProcess -and -not $serveProcess.HasExited) {
       Stop-Process -Id $serveProcess.Id -Force -ErrorAction SilentlyContinue
     }
     Pop-Location
   }
+}
+elseif ($Mode -eq 'BackendTunnel') {
+  Write-Host "Starting instant public tunnel for backend (port 4000)..." -ForegroundColor Cyan
+  Write-Host "Using built-in Windows OpenSSH via localhost.run (0 installs, 0 accounts needed)..." -ForegroundColor Green
+  Write-Host ""
+  & ssh.exe -o StrictHostKeyChecking=no -R 80:localhost:4000 nokey@localhost.run
 }
 elseif ($Mode -eq 'FullStack') {
   Write-Host "Starting Full-Stack Remote Tunnel (Backend API + Mobile App)..." -ForegroundColor Cyan
@@ -86,7 +94,8 @@ elseif ($Mode -eq 'FullStack') {
   Push-Location $mobileDir
   try {
     & npx.cmd expo start --tunnel -g
-  } finally {
+  }
+  finally {
     if ($backendJob -and -not $backendJob.HasExited) {
       Stop-Process -Id $backendJob.Id -Force -ErrorAction SilentlyContinue
     }

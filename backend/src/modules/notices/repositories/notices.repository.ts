@@ -41,6 +41,11 @@ export function createDrizzleNoticesRepository(db: NodePgDatabase<typeof schema>
         })
         .returning();
       if (!row) throw new Error('Failed to create notice');
+      await db.execute(sql`insert into notifications (user_id, title, message, link)
+        select u.id, ${row.title}, ${row.content}, '/notices' from users u
+        where u.status='active' and (${row.targetDepartmentId}::uuid is null or u.department_id=${row.targetDepartmentId}::uuid)
+        and (${JSON.stringify(row.targetRoles)}::jsonb = '[]'::jsonb or exists
+          (select 1 from role_assignments r where r.user_id=u.id and ${JSON.stringify(row.targetRoles)}::jsonb ? r.role))`);
       return {
         ...row,
         targetRoles: (row.targetRoles as string[]) ?? [],

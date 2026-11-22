@@ -52,6 +52,7 @@ export function addEntrance(repo: CampusRepository): RequestHandler {
       throw new HttpError(400, 'INVALID_INPUT', parsed.error.issues[0]?.message ?? 'Invalid entrance data');
     }
 
+    if (!await repo.getLocationById(locationId)) throw new HttpError(404, 'NOT_FOUND', 'Location not found');
     const entrance = await repo.addEntrance({ locationId, ...parsed.data });
     res.status(201).json({ data: entrance });
   };
@@ -64,6 +65,7 @@ export function addPathSegment(repo: CampusRepository): RequestHandler {
       throw new HttpError(400, 'INVALID_INPUT', parsed.error.issues[0]?.message ?? 'Invalid path segment');
     }
 
+    if (!await repo.getLocationById(parsed.data.fromLocationId) || !await repo.getLocationById(parsed.data.toLocationId)) throw new HttpError(404, 'NOT_FOUND', 'Path endpoints must exist');
     const segment = await repo.addPathSegment(parsed.data);
     res.status(201).json({ data: segment });
   };

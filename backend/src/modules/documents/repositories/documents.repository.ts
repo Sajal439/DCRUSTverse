@@ -1,5 +1,5 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, and } from 'drizzle-orm';
+import { eq, inArray, and } from 'drizzle-orm';
 import type * as schema from '../../../database/schema.ts';
 import { documentRequests } from '../../../database/schema.ts';
 
@@ -83,7 +83,7 @@ export function createDrizzleDocumentsRepository(db: NodePgDatabase<typeof schem
           reviewedAt: new Date(),
           ...(issuedFileUrl ? { issuedFileUrl } : {}),
         })
-        .where(eq(documentRequests.id, id))
+        .where(and(eq(documentRequests.id, id), status === 'issued' ? eq(documentRequests.status, 'approved') : inArray(documentRequests.status, ['pending', 'approved'])))
         .returning();
       if (!row) return null;
       return {

@@ -4,6 +4,7 @@ import type { CampusUserRepository } from '../../auth/repositories/user.reposito
 import type { LibraryRepository } from '../repositories/library.repository.ts';
 import { authenticate } from '../../auth/middleware/authenticate.ts';
 import { requireCampusUser, requireRoles } from '../../auth/middleware/authorize.ts';
+import { listBorrowers } from '../../users/controllers/borrowers.controller.ts';
 import {
   searchTitles,
   createTitle,
@@ -27,6 +28,7 @@ export function createLibraryRouter(
   router.use(auth, campusUser);
 
   router.get('/titles', searchTitles(libraryRepo));
+  router.get('/borrowers', requireRoles(['administrator', 'librarian']), listBorrowers(userRepo));
   router.post('/titles', requireRoles(['administrator', 'librarian']), createTitle(libraryRepo));
   router.post('/titles/:titleId/copies', requireRoles(['administrator', 'librarian']), addCopy(libraryRepo));
   router.get('/titles/:titleId/copies', listCopies(libraryRepo));

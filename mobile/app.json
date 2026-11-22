@@ -1,15 +1,28 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "DCRUSTVerse",
+    "slug": "dcrustverse",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow DCRUSTVerse to scan campus QR codes.",
+          "recordAudioAndroid": false
+        }
+      ],
+      "expo-sharing",
+      "expo-notifications"
+    ],
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.dcrustverse.campus",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -20,6 +33,13 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4e9a0db5-9f2f-45cc-99ea-6505e4459c72"
+      }
+    },
+    "owner": "sajal439",
+    "scheme": "dcrustverse"
   }
 }

@@ -1,6 +1,7 @@
+import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as schema from '../../../database/schema.ts';
-import { departments, campusLocations, notices, libraryTitles } from '../../../database/schema.ts';
+import { departments, campusLocations, notices, libraryTitles, users } from '../../../database/schema.ts';
 
 import type {
   AiSourceCitation,
@@ -56,7 +57,7 @@ export function createDrizzleAiAssistantRepository(db: NodePgDatabase<typeof sch
           sources.push({
             title: l.name,
             category: 'Campus Location',
-            snippet: `${l.name} (${l.category}) in ${l.building} - ${l.description ?? 'Campus facility'}. Hours: ${l.openingHours ?? 'Regular campus hours'}.`,
+            snippet: `${l.name} (${l.category}) in ${l.building} - ${l.description ?? 'Campus facility'}. Hours: ${l.openingHours ?? 'Not recorded; contact the facility'}.`,
             verified: true,
           });
         }
@@ -69,16 +70,17 @@ export function createDrizzleAiAssistantRepository(db: NodePgDatabase<typeof sch
         sources.push({
           title: 'Central Library Catalogue',
           category: 'Library',
-          snippet: `Central Library is open 8:00 AM - 8:00 PM. Sample holdings include: ${bookList || 'Extensive academic texts'}.`,
+          snippet: `Recorded library holdings: ${bookList || 'No catalogue entries recorded'}. Check the library location entry for published opening hours.`,
           verified: true,
         });
       }
 
       // 4. Search permitted notices
+      const [actor] = await db.select().from(users).where(eq(users.id, _userId));
       const allNotices = await db.select().from(notices);
       for (const n of allNotices) {
         const targetRoles = (n.targetRoles as string[]) ?? [];
-        const isPermitted = targetRoles.length === 0 || targetRoles.some(r => userRoles.includes(r));
+        const isPermitted = (!n.expiresAt || n.expiresAt > new Date()) && (!n.targetDepartmentId || n.targetDepartmentId === actor?.departmentId) && (targetRoles.length === 0 || targetRoles.some(r => userRoles.includes(r)));
         if (isPermitted && (qLower.includes(n.title.toLowerCase()) || qLower.includes('notice') || qLower.includes('announcement'))) {
           sources.push({
             title: n.title,

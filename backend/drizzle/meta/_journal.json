@@ -29,6 +29,20 @@
       "when": 1795374401716,
       "tag": "0003_white_ikaris",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795242262533,
+      "tag": "0004_eager_molecule_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795243534137,
+      "tag": "0005_mean_marten_broadcloak",
+      "breakpoints": true
     }
   ]
 }

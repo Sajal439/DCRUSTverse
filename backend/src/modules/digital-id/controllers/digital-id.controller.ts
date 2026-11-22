@@ -22,6 +22,10 @@ export function issueDigitalId(repo: DigitalIdRepository): RequestHandler {
     const actor = res.locals.campusUser;
     if (!actor) throw new HttpError(401, 'AUTH_REQUIRED', 'Authentication required');
 
+    const previous = await repo.getCredentialForUser(actor.id);
+    if (previous?.status === 'revoked') {
+      throw new HttpError(403, 'CREDENTIAL_REVOKED', 'Contact the campus administrator to restore a revoked credential');
+    }
     const card = await repo.issueCredential(actor.id);
     card.roles = actor.roles.map((r: { role: string }) => r.role);
     res.status(201).json({ data: card });

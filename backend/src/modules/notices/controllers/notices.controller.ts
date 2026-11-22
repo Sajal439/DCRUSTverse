@@ -15,6 +15,8 @@ export function listNotices(repo: NoticesRepository): RequestHandler {
     const filtered = isAdmin
       ? allNotices
       : allNotices.filter(notice => {
+          if (notice.expiresAt && new Date(notice.expiresAt) <= new Date()) return false;
+          if (notice.targetDepartmentId && notice.targetDepartmentId !== actor?.departmentId) return false;
           if (!notice.targetRoles || notice.targetRoles.length === 0) return true;
           return notice.targetRoles.some(role => actorRoles.includes(role));
         });
@@ -59,6 +61,10 @@ export function markNotificationRead(repo: NoticesRepository): RequestHandler {
     if (!actor) throw new HttpError(401, 'AUTH_REQUIRED', 'Authentication required');
 
     const id = req.params.id as string;
+    const owned = await repo.listNotifications(actor.id);
+    if (!owned.some(notification => notification.id === id)) {
+      throw new HttpError(404, 'NOT_FOUND', 'Notification not found');
+    }
     const ok = await repo.markNotificationRead(id);
     if (!ok) throw new HttpError(404, 'NOT_FOUND', 'Notification not found');
 

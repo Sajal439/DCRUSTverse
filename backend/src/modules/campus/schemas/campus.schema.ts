@@ -22,10 +22,10 @@ export const addPathSegmentSchema = z.object({
   toLocationId: z.uuid(),
   distanceMeters: z.number().int().positive(),
   isAccessible: z.boolean().default(true),
-});
+}).refine(data => data.fromLocationId !== data.toLocationId, { message: 'Choose two different locations', path: ['toLocationId'] });
 
 export const routeQuerySchema = z.object({
   from: z.uuid(),
   to: z.uuid(),
-  accessibleOnly: z.coerce.boolean().default(false),
+  accessibleOnly: z.enum(['true', 'false']).default('false').transform(value => value === 'true'),
 });

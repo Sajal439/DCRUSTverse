@@ -1,0 +1,15 @@
+{
+  "cli": { "appVersionSource": "local" },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "environment": "preview",
+      "env": { "EXPO_PUBLIC_API_URL": "https://dcrust-backend-live.loca.lt/api/v1" },
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "environment": "production",
+      "android": { "buildType": "app-bundle" }
+    }
+  }
+}

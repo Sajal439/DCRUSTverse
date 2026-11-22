@@ -1,3 +1,4 @@
+import { requireDepartmentManager, isGlobalAdministrator } from '../services/role-policy.ts';
 import type { RequestHandler } from 'express';
 import { HttpError } from '../../../lib/http-error.ts';
 import type { CampusUserRepository } from '../../auth/repositories/user.repository.ts';
@@ -11,10 +12,12 @@ export function listUsers(userRepo: CampusUserRepository): RequestHandler {
     const isGlobalAdmin = actor.roles.some(r => r.role === 'administrator' && r.scopeType === 'global');
     const isDeptHead = actor.roles.some(r => r.role === 'department_head');
 
+    if (!isGlobalAdmin && !isDeptHead) throw new HttpError(403, 'FORBIDDEN', 'Global administrator or assigned department-head access required');
     let departmentId = req.query.departmentId as string | undefined;
     if (!isGlobalAdmin && isDeptHead) {
       // Department head is strictly scoped to their own department
-      departmentId = actor.departmentId ?? undefined;
+      departmentId = departmentId ?? actor.departmentId ?? undefined;
+      requireDepartmentManager(actor, departmentId);
     }
 
     const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
@@ -53,7 +56,7 @@ export function getUser(userRepo: CampusUserRepository): RequestHandler {
     const isGlobalAdmin = actor.roles.some(r => r.role === 'administrator' && r.scopeType === 'global');
     const isSelf = actor.id === targetId;
     const isDeptHeadOfUser = actor.roles.some(
-      r => r.role === 'department_head' && actor.departmentId && actor.departmentId === targetUser.departmentId,
+      r => r.role === 'department_head' && r.scopeType === 'department' && r.scopeId === targetUser.departmentId,
     );
 
     if (!isGlobalAdmin && !isSelf && !isDeptHeadOfUser) {
@@ -88,6 +91,7 @@ export function updateUserStatus(userRepo: CampusUserRepository): RequestHandler
     const targetUser = await userRepo.findById(targetId);
     if (!targetUser) throw new HttpError(404, 'NOT_FOUND', 'User not found');
 
+    if (!isGlobalAdministrator(actor)) throw new HttpError(403, 'FORBIDDEN', 'Global administrator access required');
     const updated = await userRepo.updateStatus(targetId, parsed.data.status);
 
     await userRepo.logAudit({
@@ -142,6 +146,8 @@ export function assignUserRole(userRepo: CampusUserRepository): RequestHandler {
     const targetUser = await userRepo.findById(targetId);
     if (!targetUser) throw new HttpError(404, 'NOT_FOUND', 'User not found');
 
+    if (!isGlobalAdmin) requireDepartmentManager(actor, targetUser.departmentId);
+    if (parsed.data.scopeType === 'department') requireDepartmentManager(actor, parsed.data.scopeId);
     const assignment = await userRepo.assignRole({
       userId: targetId,
       role: parsed.data.role,
@@ -176,6 +182,7 @@ export function revokeUserRole(userRepo: CampusUserRepository): RequestHandler {
 
     const targetId = req.params.id as string;
     const assignmentId = req.params.assignmentId as string;
+    if (actor.id === targetId) throw new HttpError(400, 'SELF_MODIFICATION_DISALLOWED', 'You cannot remove your own roles');
 
     const targetUser = await userRepo.findById(targetId);
     if (!targetUser) throw new HttpError(404, 'NOT_FOUND', 'User not found');
@@ -195,6 +202,10 @@ export function revokeUserRole(userRepo: CampusUserRepository): RequestHandler {
       }
     }
 
+    if (!isGlobalAdmin) {
+      requireDepartmentManager(actor, assignment.scopeId);
+      if (['administrator', 'department_head'].includes(assignment.role)) throw new HttpError(403, 'FORBIDDEN', 'Department heads cannot remove administrative roles');
+    }
     const revoked = await userRepo.revokeRole(assignmentId);
     if (!revoked) throw new HttpError(404, 'NOT_FOUND', 'Role assignment could not be revoked');
 

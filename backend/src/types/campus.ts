@@ -49,6 +49,7 @@ export interface QrLinkRecord {
 }
 
 export interface CampusRepository {
+  listPaths(): Promise<PathSegmentRecord[]>;
   listLocations(filters?: { category?: CampusCategory }): Promise<LocationRecord[]>;
   getLocationById(id: string): Promise<LocationRecord | null>;
   createLocation(data: {

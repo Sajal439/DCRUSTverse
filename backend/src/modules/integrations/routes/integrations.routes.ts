@@ -15,7 +15,7 @@ export function createIntegrationsRouter(
   const auth = authenticate(verify);
   const campusUser = requireCampusUser(userRepo);
 
-  router.use(auth, campusUser, requireRoles(['administrator']));
+  router.use(auth, campusUser, requireRoles(['administrator'], { scopeCheck: (_req, user) => user.roles.some(role => role.role === 'administrator' && role.scopeType === 'global') }));
 
   router.post('/sync', triggerSync(integrationsRepo));
   router.get('/sync/runs', listSyncRuns(integrationsRepo));

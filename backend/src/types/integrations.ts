@@ -19,6 +19,7 @@ export interface SyncResult {
 
 export interface IntegrationsRepository {
   executeSync(data: {
+    actorId: string;
     integrationName: IntegrationName;
     idempotencyKey: string;
     payload: Record<string, any>[];

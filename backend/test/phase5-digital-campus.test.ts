@@ -68,6 +68,7 @@ describe('Phase 5: Digital Campus (F14, F15, F31, F32, F36)', () => {
   const qrDb: QrLinkRecord[] = [];
 
   const campusRepo: CampusRepository = {
+    async listPaths() { return []; },
     async listLocations(filters = {}) {
       if (filters.category) return locationsDb.filter(l => l.category === filters.category);
       return locationsDb;

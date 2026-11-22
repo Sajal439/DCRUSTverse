@@ -1,11 +1,8 @@
+import { registerPushTokenSchema, deviceIdSchema } from '../schemas/push.schema.ts';
+import type { PushRepository } from '../../../types/push.ts';
 import type { RequestHandler } from 'express';
 import { z } from 'zod';
 import { HttpError } from '../../../lib/http-error.ts';
-
-const registerPushTokenSchema = z.object({
-  deviceToken: z.string().trim().min(10).max(500),
-  platform: z.enum(['android', 'ios', 'web']),
-});
 
 export function getClientConfig(): RequestHandler {
   return async (_req, res) => {
@@ -39,7 +36,7 @@ export function getClientConfig(): RequestHandler {
   };
 }
 
-export function registerPushToken(): RequestHandler {
+export function registerPushToken(repo?: PushRepository): RequestHandler {
   return async (req, res) => {
     const actor = res.locals.campusUser;
     if (!actor) throw new HttpError(401, 'AUTH_REQUIRED', 'Authentication required');
@@ -49,13 +46,23 @@ export function registerPushToken(): RequestHandler {
       throw new HttpError(400, 'INVALID_INPUT', parsed.error.issues[0]?.message ?? 'Invalid push token');
     }
 
-    res.status(201).json({
-      data: {
-        userId: actor.id,
-        platform: parsed.data.platform,
-        registered: true,
-        updatedAt: new Date().toISOString(),
-      },
-    });
+    if (!repo) throw new HttpError(503, 'UNAVAILABLE', 'Push storage is unavailable');
+    const device = await repo.register(actor.id, parsed.data.deviceToken, parsed.data.platform);
+    res.status(201).json({ data: { ...device, registered: true } });
+  };
+}
+export function listPushDevices(repo?: PushRepository): RequestHandler {
+  return async (_req, res) => {
+    if (!repo) throw new HttpError(503, 'UNAVAILABLE', 'Push storage is unavailable');
+    res.json({ data: await repo.list(res.locals.campusUser!.id) });
+  };
+}
+export function removePushDevice(repo?: PushRepository): RequestHandler {
+  return async (req, res) => {
+    if (!repo) throw new HttpError(503, 'UNAVAILABLE', 'Push storage is unavailable');
+    const id = deviceIdSchema.safeParse(req.params.id);
+    if (!id.success) throw new HttpError(400, 'INVALID_INPUT', 'Invalid device');
+    if (!await repo.remove(res.locals.campusUser!.id, id.data)) throw new HttpError(404, 'NOT_FOUND', 'Device not found');
+    res.json({ data: { removed: true } });
   };
 }

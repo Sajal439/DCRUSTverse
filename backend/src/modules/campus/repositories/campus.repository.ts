@@ -31,6 +31,10 @@ export type {
 
 export function createDrizzleCampusRepository(db: NodePgDatabase<typeof schema>): CampusRepository {
   return {
+    async listPaths() {
+      const rows = await db.select().from(pathSegments);
+      return rows.map(row => ({ ...row, createdAt: row.createdAt.toISOString() }));
+    },
     async listLocations(filters = {}) {
       const conditions = [];
       if (filters.category) conditions.push(eq(campusLocations.category, filters.category));
@@ -158,7 +162,7 @@ export function createDrizzleCampusRepository(db: NodePgDatabase<typeof schema>)
       return {
         found: true,
         totalDistanceMeters: distances.get(toLocationId)!,
-        isAccessible: true,
+        isAccessible: path.every((node, i) => i === 0 || filtered.some(edge => edge.isAccessible && ((edge.fromLocationId === path[i - 1] && edge.toLocationId === node) || (edge.toLocationId === path[i - 1] && edge.fromLocationId === node)))),
         path,
       };
     },

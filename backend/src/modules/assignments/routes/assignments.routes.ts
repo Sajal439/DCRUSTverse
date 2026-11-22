@@ -1,3 +1,7 @@
+import { assignmentScope } from '../middleware/assignment-scope.ts';
+import type { AcademicPolicy } from '../../../types/academic-policy.ts';
+import type { FilesRepository } from '../../../types/files.ts';
+import { requireOwnedAttachment } from '../../files/controllers/files.controller.ts';
 import { Router } from 'express';
 import type { VerifyIdentity } from '../../../types/auth.ts';
 import type { CampusUserRepository } from '../../auth/repositories/user.repository.ts';
@@ -18,12 +22,16 @@ export function createAssignmentsRouter(
   verify: VerifyIdentity,
   userRepo: CampusUserRepository,
   assignmentsRepo: AssignmentsRepository,
+  filesRepo?: FilesRepository,
+  policy?: AcademicPolicy,
 ) {
   const router = Router();
   const auth = authenticate(verify);
   const campusUser = requireCampusUser(userRepo);
 
   router.use(auth, campusUser);
+  if (policy) router.use(assignmentScope(policy));
+  if (filesRepo) router.use('/:id/submit', requireOwnedAttachment(filesRepo, 'fileUrl'));
 
   router.post('/', requireRoles(['administrator', 'faculty', 'department_head']), createAssignment(assignmentsRepo));
   router.get('/', listAssignments(assignmentsRepo));

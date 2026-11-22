@@ -1,3 +1,7 @@
+import type { AcademicPolicy } from './academic-policy.ts';
+import type { FilesRepository } from './files.ts';
+import type { PushRepository } from './push.ts';
+import type { BulkRepository } from './bulk-repository.ts';
 import type { TimetableRepository } from './timetable.ts';
 import type { AttendanceRepository } from './attendance.ts';
 import type { AssignmentsRepository } from './assignments.ts';
@@ -23,6 +27,10 @@ import type { IotBusRepository } from './iot-bus.ts';
 import type { IntegrationsRepository } from './integrations.ts';
 
 export interface ExtraRepositories {
+  academicPolicy?: AcademicPolicy;
+  filesRepo?: FilesRepository;
+  pushRepo?: PushRepository;
+  bulkRepo?: BulkRepository;
   timetableRepo?: TimetableRepository;
   attendanceRepo?: AttendanceRepository;
   assignmentsRepo?: AssignmentsRepository;

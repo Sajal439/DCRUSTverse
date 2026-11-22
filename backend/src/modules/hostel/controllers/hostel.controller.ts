@@ -27,6 +27,30 @@ export function createHostel(repo: HostelRepository): RequestHandler {
   };
 }
 
+export function listApplications(repo: HostelRepository): RequestHandler {
+  return async (req, res) => {
+    const actor = res.locals.campusUser;
+    if (!actor) throw new HttpError(401, 'AUTH_REQUIRED', 'Authentication required');
+    const admin = actor.roles.some(role => role.role === 'administrator' && role.scopeType === 'global');
+    let applications = await repo.listApplications(admin ? {} : { studentId: actor.id });
+    if (!admin && actor.roles.some(role => role.role === 'hostel_warden')) {
+      const managed = (await repo.listHostels()).filter(hostel => hostel.wardenId === actor.id || actor.roles.some(role => role.role === 'hostel_warden' && role.scopeType === 'hostel' && role.scopeId === hostel.id));
+      applications = (await Promise.all(managed.map(hostel => repo.listApplications({ hostelId: hostel.id })))).flat();
+    }
+    res.json({ data: applications });
+  };
+}
+
+export function getMyAllocation(repo: HostelRepository): RequestHandler {
+  return async (_req, res) => {
+    const actor = res.locals.campusUser;
+    if (!actor) throw new HttpError(401, 'AUTH_REQUIRED', 'Authentication required');
+    const allocation = await repo.getAllocationByStudent(actor.id);
+    const room = allocation ? await repo.getRoomById(allocation.roomId) : null;
+    res.json({ data: allocation ? { ...allocation, room } : null });
+  };
+}
+
 export function listRooms(repo: HostelRepository): RequestHandler {
   return async (req, res) => {
     const hostelId = req.params.hostelId as string;

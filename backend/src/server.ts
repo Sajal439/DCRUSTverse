@@ -1,3 +1,8 @@
+import { createAcademicPolicy } from './modules/academics/repositories/academic-policy.repository.ts';
+import { createFilesRepository } from './modules/files/repositories/files.repository.ts';
+import { startPushWorker } from './modules/client-services/services/push-worker.ts';
+import { createPushRepository } from './modules/client-services/repositories/push.repository.ts';
+import { createBulkRepository } from './modules/bulk/repositories/bulk.repository.ts';
 import { createApp } from './app.ts';
 import { logger } from './lib/logger.ts';
 import { loadConfig } from './config/env.ts';
@@ -45,6 +50,10 @@ try {
 
   const extraRepos = database
     ? {
+        pushRepo: createPushRepository(database.orm),
+        filesRepo: createFilesRepository(database.orm),
+        academicPolicy: createAcademicPolicy(database.orm),
+        bulkRepo: createBulkRepository(database.orm),
         timetableRepo: createDrizzleTimetableRepository(database.orm),
         attendanceRepo: createDrizzleAttendanceRepository(database.orm),
         assignmentsRepo: createDrizzleAssignmentsRepository(database.orm),
@@ -85,10 +94,12 @@ try {
     process.exitCode = 1;
   });
 
+  const stopPushWorker = database ? startPushWorker(database.pool) : () => {};
   let stopping = false;
   const shutdown = (signal: string) => {
     if (stopping) return;
     stopping = true;
+    stopPushWorker();
     logger.info({ event: 'server_stopping', signal });
     const timeout = setTimeout(() => {
       server.closeAllConnections();

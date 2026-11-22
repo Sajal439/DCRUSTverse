@@ -681,14 +681,20 @@ test('F24 Documents: certificate request, progress and secure isolation', async 
     .expect(403);
   assert.equal(sneakRes.body.error.code, 'FORBIDDEN');
 
-  // 3. Admin reviews and issues document with URL
+  // 3. Admin reviews (approves) and then issues document with URL
+  await request(appAdmin)
+    .patch(`/api/v1/documents/${docId}/review`)
+    .set('Authorization', 'Bearer token.1.2')
+    .send({ status: 'approved' })
+    .expect(200);
+
   const issueRes = await request(appAdmin)
     .patch(`/api/v1/documents/${docId}/review`)
     .set('Authorization', 'Bearer token.1.2')
-    .send({ status: 'issued', issuedFileUrl: 'https://storage.campus.edu/docs/bonafide-123.pdf' })
+    .send({ status: 'issued', issuedFileUrl: 'campus-file:11111111-1111-4111-a111-111111111111' })
     .expect(200);
   assert.equal(issueRes.body.data.status, 'issued');
-  assert.equal(issueRes.body.data.issuedFileUrl, 'https://storage.campus.edu/docs/bonafide-123.pdf');
+  assert.equal(issueRes.body.data.issuedFileUrl, 'campus-file:11111111-1111-4111-a111-111111111111');
 });
 
 test('F20 & F21: audit trail query and bulk CSV formula injection sanitization', async () => {
@@ -704,13 +710,13 @@ test('F20 & F21: audit trail query and bulk CSV formula injection sanitization',
   assert.equal(auditRes.body.data.length, 1);
   assert.equal(auditRes.body.data[0].action, 'hostel.allocated');
 
-  // 2. Bulk CSV validate import escapes spreadsheet formula injections
+  // 2. Bulk CSV validate import
   const csvRes = await request(appAdmin)
     .post('/api/v1/bulk/validate-import')
     .set('Authorization', 'Bearer token.1.2')
     .send({
       rows: [
-        { email: 'user1@dcrust.ac.in', displayName: '=cmd|/c calc!A0', role: '+admin' },
+        { email: 'user1@dcrust.ac.in', displayName: 'Valid User', role: 'student' },
         { email: 'invalid-email', displayName: 'Bad Row' },
       ],
     })
@@ -718,7 +724,18 @@ test('F20 & F21: audit trail query and bulk CSV formula injection sanitization',
 
   assert.equal(csvRes.body.data.validCount, 1);
   assert.equal(csvRes.body.data.errorCount, 1);
-  // Formula injected cells neutralized with leading single quote
-  assert.equal(csvRes.body.data.validRows[0].displayName, "'=cmd|/c calc!A0");
-  assert.equal(csvRes.body.data.validRows[0].role, "'+admin");
+
+  // 3. Bulk CSV sanitize export escapes spreadsheet formula injections
+  const sanitizeRes = await request(appAdmin)
+    .post('/api/v1/bulk/sanitize-export')
+    .set('Authorization', 'Bearer token.1.2')
+    .send({
+      rows: [
+        { displayName: '=cmd|/c calc!A0', role: '+admin' },
+      ],
+    })
+    .expect(200);
+
+  assert.equal(sanitizeRes.body.data[0].displayName, "'=cmd|/c calc!A0");
+  assert.equal(sanitizeRes.body.data[0].role, "'+admin");
 });

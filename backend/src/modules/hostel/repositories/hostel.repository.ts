@@ -150,33 +150,36 @@ export function createDrizzleHostelRepository(db: NodePgDatabase<typeof schema>)
     },
 
     async allocateRoom(studentId, roomId): Promise<HostelAllocationItem> {
-      const room = await this.getRoomById(roomId);
-      if (!room) throw new Error('Room not found');
-      if (room.currentOccupancy >= room.capacity) {
-        throw new Error('Room has reached full capacity');
-      }
+      return db.transaction(async tx => {
+        const [room] = await tx.select().from(hostelRooms).where(eq(hostelRooms.id, roomId)).for('update');
+        if (!room) throw new Error('Room not found');
+        if (room.currentOccupancy >= room.capacity) {
+          throw new Error('Room has reached full capacity');
+        }
 
-      // Increment room occupancy
-      await db
-        .update(hostelRooms)
-        .set({ currentOccupancy: sql`${hostelRooms.currentOccupancy} + 1` })
-        .where(eq(hostelRooms.id, roomId));
+        // Increment room occupancy
+        await tx
+          .update(hostelRooms)
+          .set({ currentOccupancy: sql`${hostelRooms.currentOccupancy} + 1` })
+          .where(eq(hostelRooms.id, roomId));
 
-      const [row] = await db
-        .insert(hostelAllocations)
-        .values({
-          studentId,
-          roomId,
-        })
-        .returning();
+        const [row] = await tx
+          .insert(hostelAllocations)
+          .values({
+            studentId,
+            roomId,
+          })
+          .returning();
 
-      if (!row) throw new Error('Failed to allocate room');
-      return {
-        id: row.id,
-        studentId: row.studentId,
-        roomId: row.roomId,
-        allocatedAt: row.allocatedAt.toISOString(),
-      };
+        if (!row) throw new Error('Failed to allocate room');
+        await tx.update(hostelApplications).set({ status: 'approved' }).where(and(eq(hostelApplications.studentId, studentId), eq(hostelApplications.hostelId, room.hostelId), eq(hostelApplications.status, 'pending')));
+        return {
+          id: row.id,
+          studentId: row.studentId,
+          roomId: row.roomId,
+          allocatedAt: row.allocatedAt.toISOString(),
+        };
+      });
     },
 
     async requestTransfer(studentId, toRoomId, reason): Promise<HostelTransferItem> {
@@ -228,55 +231,63 @@ export function createDrizzleHostelRepository(db: NodePgDatabase<typeof schema>)
     },
 
     async approveTransfer(transferId, reviewerId): Promise<HostelTransferItem | null> {
-      const [transfer] = await db.select().from(hostelTransfers).where(eq(hostelTransfers.id, transferId)).limit(1);
-      if (!transfer || transfer.status !== 'pending') return null;
+      return db.transaction(async tx => {
+        const [transfer] = await tx.select().from(hostelTransfers).where(eq(hostelTransfers.id, transferId)).limit(1).for('update');
+        if (!transfer || transfer.status !== 'pending') return null;
 
-      const targetRoom = await this.getRoomById(transfer.toRoomId);
-      if (!targetRoom || targetRoom.currentOccupancy >= targetRoom.capacity) {
-        throw new Error('Target room is at full capacity');
-      }
+        const [allocation] = await tx.select().from(hostelAllocations).where(eq(hostelAllocations.studentId, transfer.studentId)).for('update');
+        if (!allocation || allocation.roomId !== transfer.fromRoomId) throw new Error('The original allocation has changed');
+        if (transfer.fromRoomId === transfer.toRoomId) throw new Error('Choose a different room');
+        const lockedRooms = await tx.select().from(hostelRooms).where(sql`${hostelRooms.id} IN (${transfer.fromRoomId}, ${transfer.toRoomId})`).orderBy(hostelRooms.id).for('update');
+        const targetRoom = lockedRooms.find(room => room.id === transfer.toRoomId);
+        if (!targetRoom || targetRoom.currentOccupancy >= targetRoom.capacity) {
+          throw new Error('Target room is at full capacity');
+        }
 
-      // Atomically decrement old room occupancy & increment new room occupancy
-      await db
-        .update(hostelRooms)
-        .set({ currentOccupancy: sql`GREATEST(0, ${hostelRooms.currentOccupancy} - 1)` })
-        .where(eq(hostelRooms.id, transfer.fromRoomId));
+        // Atomically decrement old room occupancy & increment new room occupancy
+        await tx
+          .update(hostelRooms)
+          .set({ currentOccupancy: sql`GREATEST(0, ${hostelRooms.currentOccupancy} - 1)` })
+          .where(eq(hostelRooms.id, transfer.fromRoomId));
 
-      await db
-        .update(hostelRooms)
-        .set({ currentOccupancy: sql`${hostelRooms.currentOccupancy} + 1` })
-        .where(eq(hostelRooms.id, transfer.toRoomId));
+        await tx
+          .update(hostelRooms)
+          .set({ currentOccupancy: sql`${hostelRooms.currentOccupancy} + 1` })
+          .where(eq(hostelRooms.id, transfer.toRoomId));
 
-      // Update student allocation to new room
-      await db
-        .update(hostelAllocations)
-        .set({ roomId: transfer.toRoomId, allocatedAt: new Date() })
-        .where(eq(hostelAllocations.studentId, transfer.studentId));
+        // Update student allocation to new room
+        await tx
+          .update(hostelAllocations)
+          .set({ roomId: transfer.toRoomId, allocatedAt: new Date() })
+          .where(eq(hostelAllocations.studentId, transfer.studentId));
 
-      // Mark transfer approved
-      const [updated] = await db
-        .update(hostelTransfers)
-        .set({
-          status: 'approved',
-          reviewedBy: reviewerId,
-          reviewedAt: new Date(),
-        })
-        .where(eq(hostelTransfers.id, transferId))
-        .returning();
+        // Mark transfer approved
+        const [updated] = await tx
+          .update(hostelTransfers)
+          .set({
+            status: 'approved',
+            reviewedBy: reviewerId,
+            reviewedAt: new Date(),
+          })
+          .where(eq(hostelTransfers.id, transferId))
+          .returning();
 
-      if (!updated) throw new Error('Failed to update transfer');
+        if (!updated) throw new Error('Failed to update transfer');
 
-      return {
-        id: updated.id,
-        studentId: updated.studentId,
-        fromRoomId: updated.fromRoomId,
-        toRoomId: updated.toRoomId,
-        status: updated.status as HostelTransferItem['status'],
-        reason: updated.reason,
-        reviewedBy: updated.reviewedBy,
-        reviewedAt: updated.reviewedAt ? updated.reviewedAt.toISOString() : null,
-        requestedAt: updated.requestedAt.toISOString(),
-      };
+        return {
+          id: updated.id,
+          studentId: updated.studentId,
+          fromRoomId: updated.fromRoomId,
+          toRoomId: updated.toRoomId,
+          status: updated.status as HostelTransferItem['status'],
+          reason: updated.reason,
+          reviewedBy: updated.reviewedBy,
+          reviewedAt: updated.reviewedAt ? updated.reviewedAt.toISOString() : null,
+          requestedAt: updated.requestedAt.toISOString(),
+        };
+      });
     },
+
+
   };
 }

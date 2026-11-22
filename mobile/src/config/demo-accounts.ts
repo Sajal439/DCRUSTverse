@@ -1,0 +1,73 @@
+import type { CampusUser, CampusProfile } from '../types';
+
+export const demoAccounts: Record<string, { user: CampusUser; profile: CampusProfile; email: string }> = {
+        student: {
+          user: {
+            id: 'u_student_demo_01',
+            authUserId: 'ccf399fb-3335-47a3-ba1d-d8df5c41485d',
+            email: 'student@dcrustm.org',
+            displayName: 'Rahul Sharma',
+            departmentId: 'dept_cse',
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            roles: [{ role: 'student', scopeType: 'global', scopeId: null }],
+          },
+          profile: {
+            id: 'prof_std_01',
+            userId: 'u_student_demo_01',
+            rollNumber: '23001001001',
+            employeeId: null,
+            designation: null,
+            phone: '+91 98765 43210',
+            bio: 'B.Tech CSE 3rd Year',
+            avatarUrl: null,
+          },
+          email: 'student@dcrustm.org',
+        },
+        faculty: {
+          user: {
+            id: 'u_faculty_demo_01',
+            authUserId: '7dbae1da-de76-4567-9f9e-9d4840bd7f80',
+            email: 'faculty@dcrustm.org',
+            displayName: 'Dr. Suresh Sharma',
+            departmentId: 'dept_cse',
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            roles: [{ role: 'faculty', scopeType: 'department', scopeId: 'dept_cse' }],
+          },
+          profile: {
+            id: 'prof_fac_01',
+            userId: 'u_faculty_demo_01',
+            rollNumber: null,
+            employeeId: 'EMP-CSE-012',
+            designation: 'Associate Professor',
+            phone: '+91 94160 55432',
+            bio: 'Department of Computer Science & Engineering',
+            avatarUrl: null,
+          },
+          email: 'faculty@dcrustm.org',
+        },
+        admin: {
+          user: {
+            id: 'u_admin_demo_01',
+            authUserId: 'admin_auth_id',
+            email: 'admin@dcrustm.org',
+            displayName: 'Campus Admin Desk',
+            departmentId: null,
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            roles: [{ role: 'administrator', scopeType: 'global', scopeId: null }],
+          },
+          profile: {
+            id: 'prof_adm_01',
+            userId: 'u_admin_demo_01',
+            rollNumber: null,
+            employeeId: 'ADM-001',
+            designation: 'University Administrator',
+            phone: '+91 99999 11111',
+            bio: 'System Administrator',
+            avatarUrl: null,
+          },
+          email: 'admin@dcrustm.org',
+        },
+      };

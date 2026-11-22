@@ -1,0 +1,12 @@
+node_modules
+.expo
+dist
+test
+.env
+.env.*
+!.env.example
+credentials.json
+*.jks
+*.keystore
+*.log
+.git

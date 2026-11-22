@@ -45,6 +45,9 @@ export function getTicket(repo: TicketsRepository): RequestHandler {
     }
 
     const isStaff = isGlobalAdmin || actor.roles.some(r => ['service_staff', 'department_head'].includes(r.role));
+    if (!isStaff && !isCreator && !isAssignedStaff) {
+      throw new HttpError(403, 'FORBIDDEN', 'This ticket belongs to another campus user');
+    }
     const comments = await repo.listComments(ticket.id, isStaff);
 
     res.json({
@@ -99,10 +102,19 @@ export function updateTicketStatus(repo: TicketsRepository): RequestHandler {
     const isCreator = actor.id === ticket.creatorId;
     const isStaff = actor.roles.some(r => ['administrator', 'service_staff', 'department_head'].includes(r.role));
 
+    if (!isStaff && !isCreator) throw new HttpError(403, 'FORBIDDEN', 'You cannot modify another user\'s ticket');
+    const isGlobalAdmin = actor.roles.some(r => r.role === 'administrator' && r.scopeType === 'global');
+    if (ticket.isSensitive && !isGlobalAdmin && !isCreator && actor.id !== ticket.assignedStaffId) {
+      throw new HttpError(403, 'SENSITIVE_TICKET_FORBIDDEN', 'Access to sensitive ticket is restricted');
+    }
+
     // A student/creator can only reopen a resolved or closed ticket
     if (!isStaff && isCreator) {
       if (parsed.data.status !== 'reopened') {
         throw new HttpError(403, 'FORBIDDEN', 'Creators can only reopen resolved tickets');
+      }
+      if (!['resolved', 'closed'].includes(ticket.status)) {
+        throw new HttpError(409, 'INVALID_TRANSITION', 'Only resolved or closed tickets can be reopened');
       }
     }
 
@@ -131,6 +143,14 @@ export function addComment(repo: TicketsRepository): RequestHandler {
     if (!actor) throw new HttpError(401, 'AUTH_REQUIRED', 'Authentication required');
 
     const ticketId = req.params.id as string;
+    const ticket = await repo.getTicketById(ticketId);
+    if (!ticket) throw new HttpError(404, 'NOT_FOUND', 'Ticket not found');
+    const globalAdmin = actor.roles.some(r => r.role === 'administrator' && r.scopeType === 'global');
+    const ownerOrAssigned = ticket.creatorId === actor.id || ticket.assignedStaffId === actor.id;
+    const staff = actor.roles.some(r => ['administrator', 'service_staff', 'department_head'].includes(r.role));
+    if ((!ownerOrAssigned && !staff) || (ticket.isSensitive && !ownerOrAssigned && !globalAdmin)) {
+      throw new HttpError(403, 'FORBIDDEN', 'You cannot comment on this ticket');
+    }
     const parsed = addCommentSchema.safeParse(req.body);
     if (!parsed.success) {
       throw new HttpError(400, 'INVALID_INPUT', parsed.error.issues[0]?.message ?? 'Invalid comment');

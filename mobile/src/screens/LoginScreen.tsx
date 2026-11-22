@@ -1,3 +1,4 @@
+import { requestRecovery } from '../services/recovery';
 import React, { useState } from 'react';
 import {
   View,
@@ -13,25 +14,36 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/Button';
 import { THEME } from '../styles/theme';
+import { registerAccount } from '../services/registration';
 
 export const LoginScreen: React.FC = () => {
-  const { login, demoLogin, isLoading } = useAuth();
-  const [email, setEmail] = useState('student@dcrustm.org');
-  const [password, setPassword] = useState('CampusPass@2026');
+  const { login, demoLogin } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [registering, setRegistering] = useState(false);
+  const [notice, setNotice] = useState('');
 
   const handleLogin = async () => {
+    if (isLoading) return;
     if (!email.trim() || !password) {
       setErrorMsg('Please enter both your campus email and password.');
       return;
     }
     setErrorMsg(null);
+    setNotice('');
+    setIsLoading(true);
     try {
-      await login(email, password);
+      if (registering) {
+        await registerAccount(email, password);
+        setNotice('Check your inbox to verify your email, then sign in and complete your campus profile. Campus access requires administrator approval.');
+        setRegistering(false);
+      } else { await login(email, password); }
     } catch (err: any) {
       setErrorMsg(err.message || 'Login failed. Please verify credentials.');
-    }
+    } finally { setIsLoading(false); }
   };
 
   const handleInstantDemo = async (role: 'student' | 'faculty' | 'admin') => {
@@ -65,9 +77,9 @@ export const LoginScreen: React.FC = () => {
         <View style={styles.demoCard}>
           <View style={styles.demoHeaderRow}>
             <MaterialCommunityIcons name="lightning-bolt" size={18} color="#D97706" />
-            <Text style={styles.demoCardTitle}>Instant 1-Tap Portal Access</Text>
+            <Text style={styles.demoCardTitle}>Preview sample screens</Text>
           </View>
-          <Text style={styles.demoCardSub}>Jump directly into role portals with pre-populated campus data:</Text>
+          <Text style={styles.demoCardSub}>Preview only. Sample accounts do not submit requests or access real campus records.</Text>
           <View style={styles.demoBtnRow}>
             <TouchableOpacity
               style={[styles.demoRoleBtn, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]}
@@ -100,8 +112,8 @@ export const LoginScreen: React.FC = () => {
 
         {/* Standard Email / Password Sign-In Box */}
         <View style={styles.card}>
-          <Text style={styles.formTitle}>Supabase Cloud Sign In</Text>
-          <Text style={styles.formSubtitle}>Or sign in using verified database credentials</Text>
+          <Text style={styles.formTitle}>{registering ? 'Create your account' : 'Campus sign in'}</Text>
+          <Text style={styles.formSubtitle}>Use your verified campus account for live services.</Text>
 
           {errorMsg && (
             <View style={styles.errorContainer}>
@@ -109,7 +121,9 @@ export const LoginScreen: React.FC = () => {
               <Text style={styles.errorText}>{errorMsg}</Text>
             </View>
           )}
+          {!!notice && <Text accessibilityLiveRegion="polite" style={{ color: '#12643A', marginBottom: 16, lineHeight: 21 }}>{notice}</Text>}
 
+          <TouchableOpacity disabled={isLoading} onPress={async () => { setIsLoading(true); setErrorMsg(null); try { await requestRecovery(email); setNotice('If an account exists, a recovery email will arrive. Open its link on this Android device.'); } catch (error) { setErrorMsg(error instanceof Error ? error.message : 'Recovery request failed'); } finally { setIsLoading(false); } }}><Text style={{ color: '#2448A6', paddingVertical: 14 }}>Forgot password? Enter your email below, then tap here.</Text></TouchableOpacity>
           {/* Email Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>University Email</Text>
@@ -152,12 +166,13 @@ export const LoginScreen: React.FC = () => {
           </View>
 
           <Button
-            title="Sign In with Credentials"
+            title={registering ? 'Register & verify email' : 'Sign in'}
             onPress={handleLogin}
             loading={isLoading}
             size="lg"
             style={styles.signInBtn}
           />
+          <TouchableOpacity accessibilityRole="button" disabled={isLoading} onPress={() => { setRegistering(!registering); setErrorMsg(null); }} style={{ padding: 16 }}><Text style={{ color: '#2448A6', textAlign: 'center', fontWeight: '700' }}>{registering ? 'Already have an account? Sign in' : 'New here? Create an account'}</Text></TouchableOpacity>
         </View>
 
         <Text style={styles.footerHelp}>

@@ -1,3 +1,5 @@
+import type { FilesRepository } from '../../../types/files.ts';
+import { requireOwnedAttachment } from '../../files/controllers/files.controller.ts';
 import { Router } from 'express';
 import type { VerifyIdentity } from '../../../types/auth.ts';
 import type { CampusUserRepository } from '../../auth/repositories/user.repository.ts';
@@ -15,20 +17,22 @@ export function createDocumentsRouter(
   verify: VerifyIdentity,
   userRepo: CampusUserRepository,
   documentsRepo: DocumentsRepository,
+  filesRepo?: FilesRepository,
 ) {
   const router = Router();
   const auth = authenticate(verify);
   const campusUser = requireCampusUser(userRepo);
 
   router.use(auth, campusUser);
+  if (filesRepo) router.use('/:id/review', requireOwnedAttachment(filesRepo, 'issuedFileUrl'));
 
   router.post('/', createRequest(documentsRepo));
-  router.get('/', listRequests(documentsRepo));
-  router.get('/:id', getRequest(documentsRepo));
+  router.get('/', listRequests(documentsRepo, userRepo));
+  router.get('/:id', getRequest(documentsRepo, userRepo));
   router.patch(
     '/:id/review',
     requireRoles(['administrator', 'service_staff', 'department_head']),
-    reviewRequest(documentsRepo),
+    reviewRequest(documentsRepo, userRepo),
   );
 
   return router;

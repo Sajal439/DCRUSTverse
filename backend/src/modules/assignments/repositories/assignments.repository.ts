@@ -1,3 +1,4 @@
+import { HttpError } from '../../../lib/http-error.ts';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, and, sql } from 'drizzle-orm';
 import type * as schema from '../../../database/schema.ts';
@@ -162,6 +163,9 @@ export function createDrizzleAssignmentsRepository(db: NodePgDatabase<typeof sch
     },
 
     async gradeSubmission(data): Promise<GradeItem> {
+      const [assignment] = await db.select({ maxMarks: assignments.maxMarks }).from(submissions).innerJoin(assignments, eq(assignments.id, submissions.assignmentId)).where(eq(submissions.id, data.submissionId));
+      if (!assignment) throw new HttpError(404, 'NOT_FOUND', 'Submission not found');
+      if (data.marksObtained > assignment.maxMarks) throw new HttpError(400, 'INVALID_MARKS', 'Marks exceed the assignment maximum');
       const [row] = await db
         .insert(grades)
         .values({
@@ -170,6 +174,7 @@ export function createDrizzleAssignmentsRepository(db: NodePgDatabase<typeof sch
           feedback: data.feedback ?? null,
           gradedBy: data.gradedBy,
         })
+        .onConflictDoUpdate({ target: grades.submissionId, set: { marksObtained: data.marksObtained, feedback: data.feedback ?? null, gradedBy: data.gradedBy, gradedAt: new Date() } })
         .returning();
       if (!row) throw new Error('Failed to grade submission');
       return {

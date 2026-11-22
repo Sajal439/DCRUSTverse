@@ -36,6 +36,9 @@ export function requireCampusUser(userRepo: CampusUserRepository): RequestHandle
     if (user.status === 'disabled') {
       throw new HttpError(403, 'ACCOUNT_DISABLED', 'This campus account has been deactivated');
     }
+    if (user.status !== 'active') {
+      throw new HttpError(403, 'ACCOUNT_PENDING_APPROVAL', 'Your campus account is awaiting administrative approval');
+    }
     res.locals.campusUser = user;
     next();
   };

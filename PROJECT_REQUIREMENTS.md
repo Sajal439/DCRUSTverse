@@ -1,6 +1,6 @@
 # DCRUSTVerse requirements
 
-Status: implementation baseline. No application features are implemented yet.
+Status: requirements baseline. Backend modules and a live mobile integration are implemented in part; acceptance verification remains pending. See `docs/ANDROID_SUBMISSION.md` for the current submission status and known gaps.
 
 Source: DCRUSTVerse_Project_Proposal.docx and the scope agreed in this chat. The committed scope includes the proposal, its future scope, the suggested improvements, and additional features. Phases describe delivery order, not optional scope.
 

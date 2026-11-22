@@ -1,3 +1,4 @@
+import { privateFileLinkSchema } from '../../files/schemas/files.schema.ts';
 import { z } from 'zod';
 
 export const createAssignmentSchema = z.object({
@@ -11,8 +12,8 @@ export const createAssignmentSchema = z.object({
 
 export const submitAssignmentSchema = z.object({
   content: z.string().trim().max(10000).optional(),
-  fileUrl: z.string().url().optional(),
-}).refine(data => data.content !== undefined || data.fileUrl !== undefined, {
+  fileUrl: privateFileLinkSchema.optional(),
+}).refine(data => Boolean(data.content?.trim()) || data.fileUrl !== undefined, {
   message: 'Either content or fileUrl must be provided',
 });
 

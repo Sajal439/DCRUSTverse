@@ -29,9 +29,12 @@ export function recordAttendance(repo: AttendanceRepository): RequestHandler {
 
 export function listSessionAttendance(repo: AttendanceRepository): RequestHandler {
   return async (req, res) => {
+    const actor = res.locals.campusUser;
+    if (!actor) throw new HttpError(401, 'AUTH_REQUIRED', 'Authentication required');
     const sessionId = req.params.sessionId as string;
     const data = await repo.listSessionAttendance(sessionId);
-    res.json({ data });
+    const staff = actor.roles.some(role => ['administrator', 'faculty', 'department_head'].includes(role.role));
+    res.json({ data: staff ? data : data.filter(record => record.studentId === actor.id) });
   };
 }
 

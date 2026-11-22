@@ -32,6 +32,7 @@ export const assignRoleSchema = z.object({
   scopeType: z.enum(['global', 'department', 'course', 'hostel', 'club']).default('global'),
   scopeId: z.uuid().optional(),
 }).refine(data => {
+  if (data.role === 'administrator' && data.scopeType !== 'global') return false;
   if (data.scopeType === 'global') return data.scopeId === undefined || data.scopeId === null;
   return data.scopeId !== undefined && data.scopeId !== null;
 }, {

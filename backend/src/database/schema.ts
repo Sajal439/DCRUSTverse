@@ -12,6 +12,43 @@ import {
   boolean,
 } from 'drizzle-orm/pg-core';
 
+export const pushDevices = pgTable('push_devices', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  deviceToken: text('device_token').notNull().unique(),
+  platform: text('platform', { enum: ['android', 'ios'] }).notNull(),
+  enabled: boolean('enabled').default(true).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}).enableRLS();
+
+export const pushDeliveries = pgTable('push_deliveries', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  deviceId: uuid('device_id').references(() => pushDevices.id, { onDelete: 'cascade' }).notNull(),
+  notificationId: uuid('notification_id').references(() => notifications.id, { onDelete: 'cascade' }).notNull(),
+  status: text('status').default('pending').notNull(),
+  ticketId: text('ticket_id'),
+  attempts: integer('attempts').default(0).notNull(),
+  error: text('error'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, table => [unique('push_delivery_unique').on(table.deviceId, table.notificationId)]).enableRLS();
+
+export const privateFiles = pgTable('private_files', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  ownerId: uuid('owner_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  name: text('name').notNull(),
+  mimeType: text('mime_type').notNull(),
+  size: integer('size').notNull(),
+  contentBase64: text('content_base64').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}).enableRLS();
+
+// Participation is separate from answers so anonymous responses have no user ID.
+export const surveyParticipations = pgTable('survey_participations', {
+  surveyId: uuid('survey_id').references(() => surveys.id, { onDelete: 'cascade' }).notNull(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+}, table => [unique('survey_participation_unique').on(table.surveyId, table.userId)]).enableRLS();
+
 // ==========================================
 // IDENTITY & ACADEMIC SETUP BASELINE
 // ==========================================

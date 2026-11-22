@@ -14,7 +14,8 @@ import { Button } from '../components/Button';
 import { THEME } from '../styles/theme';
 
 export const OnboardScreen: React.FC = () => {
-  const { completeOnboarding, isLoading, email } = useAuth();
+  const { completeOnboarding, email } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [rollNumber, setRollNumber] = useState('');
   const [phone, setPhone] = useState('');
@@ -27,6 +28,8 @@ export const OnboardScreen: React.FC = () => {
       return;
     }
     setErrorMsg(null);
+    if (isLoading) return;
+    setIsLoading(true);
     try {
       await completeOnboarding({
         displayName: displayName.trim(),
@@ -36,7 +39,7 @@ export const OnboardScreen: React.FC = () => {
       });
     } catch (err: any) {
       setErrorMsg(err.message || 'Onboarding failed.');
-    }
+    } finally { setIsLoading(false); }
   };
 
   return (

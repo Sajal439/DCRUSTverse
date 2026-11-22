@@ -210,6 +210,7 @@ describe('Phase 7: End-to-End Demonstration Journeys 1 through 8', () => {
   };
 
   const campusRepo: CampusRepository = {
+    async listPaths() { return []; },
     async listLocations() { return campusDb.locations; },
     async getLocationById(id: string) { return campusDb.locations.find((l: any) => l.id === id) ?? null; },
     async createLocation(d) {
@@ -444,7 +445,7 @@ describe('Phase 7: End-to-End Demonstration Journeys 1 through 8', () => {
       .send({
         integrationName: 'erp_attendance',
         idempotencyKey: 'IDEMP-E2E-TEST-001',
-        payload: [{ id: 1 }],
+        payload: [{ studentId: '11111111-1111-4111-a111-111111111111', sessionId: '22222222-2222-4222-a222-222222222222', status: 'present' }],
       });
     assert.equal(syncRes1.status, 201);
 
@@ -454,7 +455,7 @@ describe('Phase 7: End-to-End Demonstration Journeys 1 through 8', () => {
       .send({
         integrationName: 'erp_attendance',
         idempotencyKey: 'IDEMP-E2E-TEST-001',
-        payload: [{ id: 1 }],
+        payload: [{ studentId: '11111111-1111-4111-a111-111111111111', sessionId: '22222222-2222-4222-a222-222222222222', status: 'present' }],
       });
     assert.equal(syncRes2.status, 200);
   });

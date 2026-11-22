@@ -28,6 +28,9 @@ export async function apiRequest<T = any>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = await getStoredToken();
+  if (token?.startsWith('demo_token_')) {
+    throw new Error('Preview mode does not send requests to the campus server. Sign in with a real account to use live services.');
+  }
   const url = `${APP_CONFIG.API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
   const headers: Record<string, string> = {
@@ -36,7 +39,7 @@ export async function apiRequest<T = any>(
     ...(options.headers as Record<string, string>),
   };
 
-  if (token) {
+  if (token && !headers.Authorization) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 

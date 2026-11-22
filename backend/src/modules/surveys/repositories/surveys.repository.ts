@@ -1,7 +1,8 @@
+import { HttpError } from '../../../lib/http-error.ts';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import type * as schema from '../../../database/schema.ts';
-import { surveys, surveyQuestions, surveyResponses } from '../../../database/schema.ts';
+import { surveys, surveyQuestions, surveyResponses, surveyParticipations } from '../../../database/schema.ts';
 
 import type {
   SurveyQuestionItem,
@@ -102,7 +103,17 @@ export function createDrizzleSurveysRepository(db: NodePgDatabase<typeof schema>
         responseText: a.responseText,
       }));
 
-      const inserted = await db.insert(surveyResponses).values(rowsToInsert).returning();
+      const inserted = await db.transaction(async tx => {
+        const [survey] = await tx.select().from(surveys).where(eq(surveys.id, surveyId)).for('update');
+        if (!survey || new Date() < survey.startsAt || new Date() > survey.endsAt) throw new HttpError(400, 'SURVEY_CLOSED', 'Survey is closed');
+        const [existing] = await tx.select().from(surveyParticipations).where(and(eq(surveyParticipations.surveyId, surveyId), eq(surveyParticipations.userId, respondentId)));
+        const [legacy] = await tx.select({ id: surveyResponses.id }).from(surveyResponses).where(and(eq(surveyResponses.surveyId, surveyId), eq(surveyResponses.respondentId, respondentId))).limit(1);
+        if (existing || legacy) throw new HttpError(409, 'ALREADY_RESPONDED', 'You have already answered this survey');
+        const [count] = await tx.select({ total: sql<number>`count(*)` }).from(surveyResponses).where(eq(surveyResponses.surveyId, surveyId));
+        if (Number(count?.total ?? 0) / answers.length >= survey.maxResponses) throw new HttpError(409, 'SURVEY_FULL', 'This survey has reached its response limit');
+        await tx.insert(surveyParticipations).values({ surveyId, userId: respondentId });
+        return tx.insert(surveyResponses).values(rowsToInsert).returning();
+      });
       return inserted.map(r => ({
         ...r,
         submittedAt: r.submittedAt.toISOString(),

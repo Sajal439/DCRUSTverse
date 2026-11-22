@@ -1,3 +1,5 @@
+import { HttpError } from '../../../lib/http-error.ts';
+import { departments, courses, hostels, clubs } from '../../../database/schema.ts';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, and, sql } from 'drizzle-orm';
 import type * as schema from '../../../database/schema.ts';
@@ -124,6 +126,14 @@ export function createDrizzleUserRepository(db: NodePgDatabase<typeof schema>): 
     },
 
     async assignRole(data: AssignRoleData): Promise<RoleAssignment> {
+      if (data.scopeType !== 'global') {
+        const table = { department: departments, course: courses, hostel: hostels, club: clubs }[data.scopeType];
+        const [scope] = await db.select({ id: table.id }).from(table).where(eq(table.id, data.scopeId!));
+        if (!scope) throw new HttpError(400, 'INVALID_SCOPE', 'The selected role scope no longer exists');
+      }
+      const previous = await loadRolesForUser(data.userId);
+      const duplicate = previous.find(role => role.role === data.role && role.scopeType === data.scopeType && role.scopeId === (data.scopeId ?? null));
+      if (duplicate) return duplicate;
       const [row] = await db
         .insert(roleAssignments)
         .values({

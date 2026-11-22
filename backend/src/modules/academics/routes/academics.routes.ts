@@ -4,6 +4,7 @@ import type { CampusUserRepository } from '../../auth/repositories/user.reposito
 import type { AcademicsRepository } from '../repositories/academics.repository.ts';
 import { authenticate } from '../../auth/middleware/authenticate.ts';
 import { requireCampusUser, requireRoles } from '../../auth/middleware/authorize.ts';
+import { listSectionRoster } from '../controllers/roster.controller.ts';
 import {
   listDepartments,
   createDepartment,
@@ -33,6 +34,7 @@ export function createAcademicsRouter(
   const campusUser = requireCampusUser(userRepo);
 
   router.use(auth, campusUser);
+  router.get('/sections/:sectionId/roster', requireRoles(['administrator', 'faculty', 'department_head']), listSectionRoster(academicsRepo, userRepo));
 
   // Departments
   router.get('/departments', listDepartments(academicsRepo));

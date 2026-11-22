@@ -91,6 +91,8 @@ export function listSubmissions(repo: AssignmentsRepository): RequestHandler {
 
     // Student can only see their own submission
     const ownSubmission = await repo.getSubmission(assignmentId, actor.id);
+    const assignment = await repo.getAssignmentById(assignmentId);
+    if (ownSubmission && assignment && !await repo.isResultsPublished(assignment.sectionId)) ownSubmission.grade = null;
     res.json({ data: ownSubmission ? [ownSubmission] : [] });
   };
 }

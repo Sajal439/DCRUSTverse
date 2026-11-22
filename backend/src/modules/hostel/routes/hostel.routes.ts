@@ -14,6 +14,8 @@ import {
   requestTransfer,
   listTransfers,
   approveTransfer,
+  listApplications,
+  getMyAllocation,
 } from '../controllers/hostel.controller.ts';
 
 export function createHostelRouter(
@@ -28,6 +30,8 @@ export function createHostelRouter(
   router.use(auth, campusUser);
 
   router.get('/', listHostels(hostelRepo));
+  router.get('/applications', listApplications(hostelRepo));
+  router.get('/allocation/me', getMyAllocation(hostelRepo));
   router.post('/', requireRoles(['administrator', 'hostel_warden']), createHostel(hostelRepo));
 
   router.get('/:hostelId/rooms', listRooms(hostelRepo));

@@ -1,3 +1,4 @@
+import { createFilesRouter } from './modules/files/routes/files.routes.ts';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -72,6 +73,7 @@ export function createApp(
   app.use(requestContext(log));
   app.use(helmet());
   app.use(cors({ origin: config.CORS_ORIGIN, exposedHeaders: ['X-Request-ID'] }));
+  if (userRepo && extraRepos?.filesRepo) app.use('/api/v1/files', createFilesRouter(verify, userRepo, extraRepos.filesRepo));
   app.use(express.json({ limit: '100kb' }));
   app.use('/api/v1', createV1Router(check));
   app.use('/api/v1/auth', createAuthRouter(verify, userRepo));
@@ -79,8 +81,8 @@ export function createApp(
   if (userRepo) {
     app.use('/api/v1/users', createUsersRouter(verify, userRepo));
     app.use('/api/v1/profile', createProfileRouter(verify, userRepo));
-    app.use('/api/v1/bulk', createBulkRouter(verify, userRepo));
-    app.use('/api/v1/client', createClientServicesRouter(verify, userRepo));
+    app.use('/api/v1/bulk', createBulkRouter(verify, userRepo, extraRepos?.bulkRepo));
+    app.use('/api/v1/client', createClientServicesRouter(verify, userRepo, extraRepos?.pushRepo));
 
     if (academicsRepo) {
       app.use('/api/v1/academics', createAcademicsRouter(verify, userRepo, academicsRepo));
@@ -95,7 +97,7 @@ export function createApp(
     }
 
     if (extraRepos?.assignmentsRepo) {
-      app.use('/api/v1/assignments', createAssignmentsRouter(verify, userRepo, extraRepos.assignmentsRepo));
+      app.use('/api/v1/assignments', createAssignmentsRouter(verify, userRepo, extraRepos.assignmentsRepo, extraRepos.filesRepo, extraRepos.academicPolicy));
     }
 
     if (extraRepos?.appointmentsRepo) {
@@ -138,7 +140,7 @@ export function createApp(
     }
 
     if (extraRepos?.documentsRepo) {
-      app.use('/api/v1/documents', createDocumentsRouter(verify, userRepo, extraRepos.documentsRepo));
+      app.use('/api/v1/documents', createDocumentsRouter(verify, userRepo, extraRepos.documentsRepo, extraRepos.filesRepo));
     }
 
     if (extraRepos?.auditRepo) {

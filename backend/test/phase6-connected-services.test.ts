@@ -202,6 +202,11 @@ describe('Phase 6: Connected Services (F28, F29, F30, F33, F34, F35, F37)', () =
     createMockUserRepo(mockUsers),
     undefined,
     {
+      pushRepo: {
+        async register(_userId, _token, platform) { return { id: 'device-1', platform, enabled: true, updatedAt: new Date() }; },
+        async list() { return []; },
+        async remove() { return true; },
+      },
       aiRepo,
       iotBusRepo,
       integrationsRepo,
@@ -222,7 +227,7 @@ describe('Phase 6: Connected Services (F28, F29, F30, F33, F34, F35, F37)', () =
       .post('/api/v1/client/push/register')
       .set('Authorization', 'Bearer student_token.1.2')
       .send({
-        deviceToken: 'fcm_token_abcdef1234567890',
+        deviceToken: 'ExpoPushToken[abcdef1234567890]',
         platform: 'android',
       });
     assert.equal(pushRes.status, 201);
@@ -347,7 +352,7 @@ describe('Phase 6: Connected Services (F28, F29, F30, F33, F34, F35, F37)', () =
       .send({
         integrationName: 'erp_attendance',
         idempotencyKey,
-        payload: [{ studentId: studentId, attendanceStatus: 'present' }],
+        payload: [{ studentId: studentId, sessionId: '11111111-1111-4111-a111-111111111111', status: 'present' }],
       });
     assert.equal(sync1Res.status, 201);
     assert.equal(sync1Res.body.data.recordsProcessed, 1);
@@ -360,7 +365,7 @@ describe('Phase 6: Connected Services (F28, F29, F30, F33, F34, F35, F37)', () =
       .send({
         integrationName: 'erp_attendance',
         idempotencyKey,
-        payload: [{ studentId: studentId, attendanceStatus: 'present' }],
+        payload: [{ studentId: studentId, sessionId: '11111111-1111-4111-a111-111111111111', status: 'present' }],
       });
     assert.equal(sync2Res.status, 200);
     assert.equal(sync2Res.body.data.idempotencyKey, idempotencyKey);

@@ -1,3 +1,4 @@
+import { listUserRoles } from '../controllers/roles.controller.ts';
 import { Router } from 'express';
 import type { VerifyIdentity } from '../../../types/auth.ts';
 import type { CampusUserRepository } from '../../auth/repositories/user.repository.ts';
@@ -19,6 +20,7 @@ export function createUsersRouter(verify: VerifyIdentity, userRepo: CampusUserRe
   router.use(auth, campusUser);
 
   router.get('/', requireRoles(['administrator', 'department_head']), listUsers(userRepo));
+  router.get('/:id/roles', listUserRoles(userRepo));
   router.get('/:id', getUser(userRepo));
   router.patch('/:id/status', requireRoles(['administrator']), updateUserStatus(userRepo));
   router.post('/:id/roles', requireRoles(['administrator', 'department_head']), assignUserRole(userRepo));

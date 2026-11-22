@@ -17,8 +17,10 @@ import { THEME } from '../styles/theme';
 import { apiRequest } from '../api/client';
 import { cacheGet, cacheSet } from '../utils/storage';
 
+import type { CampusRoute } from '../types/navigation';
+
 interface DashboardProps {
-  onNavigate: (screen: string) => void;
+  onNavigate: (screen: CampusRoute) => void;
 }
 
 export const DashboardScreen: React.FC<DashboardProps> = ({ onNavigate }) => {

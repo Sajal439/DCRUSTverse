@@ -118,6 +118,9 @@ export function createDrizzleDigitalIdRepository(db: NodePgDatabase<typeof schem
       }
 
       const [user] = await db.select().from(users).where(eq(users.id, cred.userId)).limit(1);
+      if (!user || user.status !== 'active') {
+        return { valid: false, status: 'revoked', message: 'The campus account is not active' };
+      }
       let departmentName = undefined;
       if (user?.departmentId) {
         const [dept] = await db.select().from(departments).where(eq(departments.id, user.departmentId)).limit(1);

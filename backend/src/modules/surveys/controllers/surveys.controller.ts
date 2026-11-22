@@ -71,6 +71,13 @@ export function submitAnswers(repo: SurveysRepository): RequestHandler {
       throw new HttpError(400, 'INVALID_INPUT', parsed.error.issues[0]?.message ?? 'Invalid answers');
     }
 
+    if (survey.targetRoles.length && !survey.targetRoles.some(role => actor.roles.some(assignment => assignment.role === role))) throw new HttpError(403, 'FORBIDDEN', 'This survey is for a different audience');
+    const questions = survey.questions ?? [];
+    if (new Set(parsed.data.answers.map(answer => answer.questionId)).size !== parsed.data.answers.length || parsed.data.answers.length !== questions.length) throw new HttpError(400, 'INVALID_ANSWERS', 'Answer every question exactly once');
+    for (const answer of parsed.data.answers) {
+      const question = questions.find(question => question.id === answer.questionId);
+      if (!question || !answer.responseText.trim() || (question.questionType === 'multiple_choice' && !question.options.includes(answer.responseText))) throw new HttpError(400, 'INVALID_ANSWERS', 'An answer does not match this survey');
+    }
     const responses = await repo.submitResponses({
       surveyId: id,
       respondentId: actor.id,
@@ -88,6 +95,8 @@ export function getSurveyAggregation(repo: SurveysRepository): RequestHandler {
     const survey = await repo.getSurveyById(id);
     if (!survey) throw new HttpError(404, 'NOT_FOUND', 'Survey not found');
 
+    const actor = res.locals.campusUser!;
+    if (survey.createdBy !== actor.id && !actor.roles.some(role => role.role === 'administrator' && role.scopeType === 'global')) throw new HttpError(403, 'FORBIDDEN', 'Only the survey creator or administrator can read responses');
     const aggregation = await repo.getAggregation(id);
     res.json({ data: aggregation });
   };
