@@ -4,7 +4,7 @@
     "preview": {
       "distribution": "internal",
       "environment": "preview",
-      "env": { "EXPO_PUBLIC_API_URL": "https://dcrust-backend-live.loca.lt/api/v1" },
+      "env": { "EXPO_PUBLIC_API_URL": "https://dcrustverse-api.onrender.com/api/v1" },
       "android": { "buildType": "apk" }
     },
     "production": {
