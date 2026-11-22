@@ -13,6 +13,10 @@ All phases are committed scope. Checkboxes represent verified work, not scaffold
 
 ## Phase 1 — Working foundation
 
+- [x] Stage 1: create TypeScript/Express API scaffolding, configuration, health endpoint and error handling.
+- [ ] Stage 2: configure database and migrations.
+- [ ] Stage 3: implement authentication and session lifecycle.
+- [ ] Stage 4: implement scoped permissions.
 - [ ] Initialize web, API, shared contracts and local database setup.
 - [ ] Add migrations, fictional seeds and environment examples.
 - [ ] Implement F01–F03: accounts, scoped permissions, profiles, dashboards and academic setup.

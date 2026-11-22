@@ -5,6 +5,7 @@ node_modules/
 *.log
 backend/data/
 coverage/
+backend/dist/
 *.db
 *.db-shm
 *.db-wal
