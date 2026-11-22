@@ -1,5 +1,8 @@
 # DCRUSTVerse
 
+[![Download Android APK](https://img.shields.io/badge/Download-Android%20APK%20(v1.0.0)-brightgreen?logo=android&style=for-the-badge)](https://github.com/Sajal439/DCRUSTverse/releases/latest/download/DCRUSTverse.apk)
+[![Release](https://img.shields.io/github/v/release/Sajal439/DCRUSTverse?style=for-the-badge&color=blue)](https://github.com/Sajal439/DCRUSTverse/releases/tag/v1.0.0)
+
 A unified digital campus platform for DCRUST, planned around student, faculty, and administrative services and a Digital Campus Explorer.
 
 ## Current status
