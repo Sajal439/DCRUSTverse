@@ -10,8 +10,29 @@ Backend development proceeds in small stages. The TypeScript/Express API include
 - `PROJECT_REQUIREMENTS.md` — agreed scope, role boundaries and acceptance scenarios.
 - `IMPLEMENTATION_PLAN.md` — delivery checklist and demonstration journeys.
 
-## Development approach
+## Project Architecture & Applications
 
-Build the backend first in small, reviewable stages. Each stage should document its scope, include appropriate verification, and receive a focused commit before proceeding to the next agreed stage. Do not implement the entire backend in one pass.
+1. **Backend API (`backend/`)**:
+   - Node.js 26 + TypeScript + Express REST API.
+   - Supabase Auth + Drizzle ORM over PostgreSQL.
+   - Comprehensive implementation of Phases 0 through 7 covering 37 campus features (F01–F37) and 58 automated integration/journey tests.
 
-Start with repository and backend scaffolding, then database setup, authentication, permissions, and individual domain modules. The backend uses Node.js 26.13.1, TypeScript, Express, Supabase Auth and Drizzle with Supabase PostgreSQL. Deployment configuration remains pending. Keep credentials, local databases, generated output and installed dependencies out of Git.
+2. **Mobile Frontend (`mobile/`)**:
+   - React Native + Expo (SDK 58) + TypeScript.
+   - Role-tailored dashboards and navigation for **Student**, **Faculty**, and **Administrator**.
+   - Features: Timetable & Attendance, Roll Call, Grading Submissions, Attendance Claims Queue, Dynamic Expiring Digital ID (5-min rolling QR), Real-time Transit Telemetry, Grievance Management, and DCRUSTbot AI Campus Assistant.
+   - Dual runtime support: Physical iOS/Android devices (via Expo Go) and Web browsers (`react-native-web`).
+
+## Demonstrating Remotely
+
+To showcase DCRUSTverse to reviewers, professors, or clients who are away from your local network:
+
+```powershell
+# Option 1: Mobile App via Expo Tunnel (for remote testing on an actual phone)
+powershell -ExecutionPolicy Bypass -File .\share-remote.ps1 -Mode Mobile
+
+# Option 2: Instant Web Link (zero installation, opens in any browser)
+powershell -ExecutionPolicy Bypass -File .\share-remote.ps1 -Mode Web
+```
+
+For full walkthrough steps, 1-tap demo credentials, and cloud deployment guides, see [docs/REMOTE_DEMO_GUIDE.md](file:///c:/Users/Lenovo/Desktop/DCRUSTverse/docs/REMOTE_DEMO_GUIDE.md).

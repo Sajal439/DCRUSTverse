@@ -55,7 +55,7 @@ All phases are committed scope. Checkboxes represent verified work, not scaffold
 - [x] Implement F28–F29 across core journeys: offline behavior and accessibility.
 - [x] Implement F30: sourced AI answers with permission filtering.
 - [x] Implement F33–F34: vehicle/sensor ingestion, dashboards, stale states and simulators.
-- [x] Implement F35: mobile client and shared workflows.
+- [x] Implement F35: mobile client and shared workflows. React Native & Expo application implemented in `mobile/` with Supabase auth, Digital ID, Academics, Live Bus tracking, Complaints, and offline caching.
 - [x] Implement F37: university adapters and sync monitoring.
 - [x] Verify reconnect behavior, source permissions, stale readings and idempotent sync. Test file: `backend/test/phase6-connected-services.test.ts`.
 
